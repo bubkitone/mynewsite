@@ -17,17 +17,18 @@
             margin: 0;
             padding: 0;
             font-family: 'Montserrat', sans-serif;
+            user-select: none;
         }
 
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #090a10;
+            background: rgba(10, 11, 18, 0.8);
         }
         ::-webkit-scrollbar-thumb {
-            background: #1e2238;
+            background: #222640;
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
@@ -92,6 +93,8 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(16px);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 100;
         }
 
         /* Счетчик ивентов */
@@ -107,7 +110,6 @@
             font-size: 13px;
             font-weight: 700;
             color: #d1d5f0;
-            transition: all 0.3s ease;
         }
 
         .events-counter .count-num {
@@ -149,27 +151,104 @@
             transform: rotate(180deg);
         }
 
-        .filter-select {
+        /* КАСТОМНЫЙ ДРОПДАУН */
+        .custom-dropdown {
+            position: relative;
+            min-width: 210px;
+        }
+
+        .dropdown-selected {
             background-color: #0d0f18;
             color: #d1d5f0;
             border: 1px solid #232742;
-            padding: 0 38px 0 16px;
+            padding: 0 16px;
             border-radius: 12px;
             height: 44px;
-            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             cursor: pointer;
             font-size: 13px;
             font-weight: 700;
             transition: all 0.3s ease;
-            appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg fill='%237c85b1' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
         }
 
-        .filter-select:hover, .filter-select:focus {
+        .dropdown-selected:hover, .custom-dropdown.active .dropdown-selected {
             border-color: var(--accent-color);
             box-shadow: 0 0 12px var(--accent-glow);
+            color: #ffffff;
+        }
+
+        .dropdown-arrow {
+            fill: #7c85b1;
+            transition: transform 0.3s ease;
+        }
+
+        .custom-dropdown.active .dropdown-arrow {
+            transform: rotate(180deg);
+            fill: var(--accent-color);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: rgba(13, 15, 24, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 6px;
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            max-height: 250px;
+            overflow-y: auto;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7);
+            z-index: 200;
+        }
+
+        .custom-dropdown.active .dropdown-menu {
+            display: flex;
+            animation: fadeIn 0.2s ease forwards;
+        }
+
+        .dropdown-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #a3aacd;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+        }
+
+        .dropdown-item.selected {
+            background: rgba(255, 170, 0, 0.12);
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .item-badge {
+            background: rgba(255, 255, 255, 0.05);
+            color: #7c85b1;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .dropdown-item:hover .item-badge, .dropdown-item.selected .item-badge {
+            background: var(--accent-color);
+            color: #000000;
         }
 
         /* Контейнер таблицы */
@@ -182,6 +261,8 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(16px);
+            position: relative;
+            z-index: 1;
         }
 
         table {
@@ -295,7 +376,7 @@
     <div id="status" class="status-bar">Синхронизация с сервером...</div>
 
     <div class="controls-container">
-        <!-- Счетчик ивентов -->
+        <!-- Счетчик -->
         <div class="events-counter">
             <span>Ивентов:</span>
             <span id="counter-value" class="count-num">0</span>
@@ -306,13 +387,23 @@
             Обновить
         </button>
         
-        <select id="filter-name" class="filter-select" onchange="applyFilters()">
-            <option value="">Все ивенты</option>
-        </select>
+        <!-- Кастомный фильтр "Ивент" -->
+        <div class="custom-dropdown" id="dropdown-name">
+            <div class="dropdown-selected" onclick="toggleDropdown('dropdown-name')">
+                <span class="selected-text">Все ивенты</span>
+                <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+            </div>
+            <div class="dropdown-menu"></div>
+        </div>
 
-        <select id="filter-rarity" class="filter-select" onchange="applyFilters()">
-            <option value="">Вся редкость</option>
-        </select>
+        <!-- Кастомный фильтр "Редкость" -->
+        <div class="custom-dropdown" id="dropdown-rarity">
+            <div class="dropdown-selected" onclick="toggleDropdown('dropdown-rarity')">
+                <span class="selected-text">Вся редкость</span>
+                <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+            </div>
+            <div class="dropdown-menu"></div>
+        </div>
     </div>
 
     <div class="table-container">
@@ -374,6 +465,8 @@
         };
 
         let rawEventsList = [];
+        let selectedNameVal = '';
+        let selectedRarityVal = '';
 
         function parseRarity(rawRarity) {
             if (!rawRarity) return { name: 'Обычный', color: '#7c85b1', priority: 10 };
@@ -395,12 +488,28 @@
             return serverKey;
         }
 
+        /* КАСТОМНЫЕ ДРОПДАУНЫ LOGIC */
+        function toggleDropdown(id) {
+            const el = document.getElementById(id);
+            const isActive = el.classList.contains('active');
+            
+            closeAllDropdowns();
+            if (!isActive) el.classList.add('active');
+        }
+
+        function closeAllDropdowns() {
+            document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('active'));
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.custom-dropdown')) {
+                closeAllDropdowns();
+            }
+        });
+
         async function fetchEvents() {
             const tbody = document.getElementById('events-list');
             const statusEl = document.getElementById('status');
-            
-            const savedSelectedName = document.getElementById('filter-name').value;
-            const savedSelectedRarity = document.getElementById('filter-rarity').value;
 
             tbody.innerHTML = '<tr><td colspan="4" class="loading">Получение актуальных данных...</td></tr>';
 
@@ -464,48 +573,77 @@
                 return a.serverNum - b.serverNum;
             });
 
-            updateFilterOptions(savedSelectedName, savedSelectedRarity);
+            updateDropdownMenus();
             applyFilters();
         }
 
-        function updateFilterOptions(targetName, targetRarity) {
-            const nameSelect = document.getElementById('filter-name');
-            const raritySelect = document.getElementById('filter-rarity');
-
-            const namesSet = new Set();
-            const raritySet = new Set();
+        /* ПОСТРОЕНИЕ ВЫПАДАЮЩИХ СПИСКОВ СО СЧЕТЧИКАМИ */
+        function updateDropdownMenus() {
+            // Подсчет количества каждого ивента
+            const nameCounts = {};
+            const rarityCounts = {};
 
             rawEventsList.forEach(item => {
-                namesSet.add(item.displayName);
-                raritySet.add(item.rarityName);
+                nameCounts[item.displayName] = (nameCounts[item.displayName] || 0) + 1;
+                rarityCounts[item.rarityName] = (rarityCounts[item.rarityName] || 0) + 1;
             });
 
-            nameSelect.innerHTML = '<option value="">Все ивенты</option>';
-            Array.from(namesSet).sort().forEach(name => {
-                const isSelected = (name === targetName) ? 'selected' : '';
-                nameSelect.innerHTML += `<option value="${name}" ${isSelected}>${name}</option>`;
-            });
+            // Рендер меню Ивентов
+            const nameMenu = document.querySelector('#dropdown-name .dropdown-menu');
+            let nameHTML = `<div class="dropdown-item ${selectedNameVal === '' ? 'selected' : ''}" onclick="selectFilter('name', '')">
+                <span>Все ивенты</span>
+                <span class="item-badge">${rawEventsList.length}</span>
+            </div>`;
 
-            raritySelect.innerHTML = '<option value="">Вся редкость</option>';
-            Array.from(raritySet).sort().forEach(rarity => {
-                const isSelected = (rarity === targetRarity) ? 'selected' : '';
-                raritySelect.innerHTML += `<option value="${rarity}" ${isSelected}>${rarity}</option>`;
+            Object.keys(nameCounts).sort().forEach(name => {
+                const isSelected = selectedNameVal === name ? 'selected' : '';
+                nameHTML += `<div class="dropdown-item ${isSelected}" onclick="selectFilter('name', '${name}')">
+                    <span>${name}</span>
+                    <span class="item-badge">${nameCounts[name]}</span>
+                </div>`;
             });
+            nameMenu.innerHTML = nameHTML;
+
+            // Рендер меню Редкости
+            const rarityMenu = document.querySelector('#dropdown-rarity .dropdown-menu');
+            let rarityHTML = `<div class="dropdown-item ${selectedRarityVal === '' ? 'selected' : ''}" onclick="selectFilter('rarity', '')">
+                <span>Вся редкость</span>
+                <span class="item-badge">${rawEventsList.length}</span>
+            </div>`;
+
+            Object.keys(rarityCounts).sort().forEach(rarity => {
+                const isSelected = selectedRarityVal === rarity ? 'selected' : '';
+                rarityHTML += `<div class="dropdown-item ${isSelected}" onclick="selectFilter('rarity', '${rarity}')">
+                    <span>${rarity}</span>
+                    <span class="item-badge">${rarityCounts[rarity]}</span>
+                </div>`;
+            });
+            rarityMenu.innerHTML = rarityHTML;
+        }
+
+        function selectFilter(type, value) {
+            if (type === 'name') {
+                selectedNameVal = value;
+                document.querySelector('#dropdown-name .selected-text').innerText = value || 'Все ивенты';
+            } else if (type === 'rarity') {
+                selectedRarityVal = value;
+                document.querySelector('#dropdown-rarity .selected-text').innerText = value || 'Вся редкость';
+            }
+
+            closeAllDropdowns();
+            updateDropdownMenus();
+            applyFilters();
         }
 
         function applyFilters() {
-            const selectedName = document.getElementById('filter-name').value;
-            const selectedRarity = document.getElementById('filter-rarity').value;
-
-            updateDynamicTheme(selectedName, selectedRarity);
+            updateDynamicTheme(selectedNameVal, selectedRarityVal);
 
             const filtered = rawEventsList.filter(item => {
-                const matchesName = !selectedName || item.displayName === selectedName;
-                const matchesRarity = !selectedRarity || item.rarityName === selectedRarity;
+                const matchesName = !selectedNameVal || item.displayName === selectedNameVal;
+                const matchesRarity = !selectedRarityVal || item.rarityName === selectedRarityVal;
                 return matchesName && matchesRarity;
             });
 
-            // Обновляем счетчик
             const counterEl = document.getElementById('counter-value');
             if (filtered.length === rawEventsList.length) {
                 counterEl.innerText = rawEventsList.length;
