@@ -4,18 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Активные ивенты HolyWorld</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Montserrat', sans-serif;
         }
 
         body {
-            background-color: #0f111a;
+            background: #08090f;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(255, 170, 0, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(170, 0, 255, 0.08) 0%, transparent 40%);
             color: #ffffff;
-            padding: 20px;
+            padding: 30px 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -23,70 +27,104 @@
         }
 
         h1 {
-            margin-bottom: 10px;
-            color: #ffaa00;
-            text-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #fff 30%, #ffaa00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 30px rgba(255, 170, 0, 0.2);
             text-align: center;
         }
 
         .status-bar {
             font-size: 13px;
-            color: #8a8fbd;
-            margin-bottom: 15px;
+            color: #6b729c;
+            margin-bottom: 25px;
             text-align: center;
+            font-weight: 500;
         }
 
+        /* Контейнер управления */
         .controls-container {
             display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
+            gap: 15px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
+            background: rgba(18, 20, 32, 0.6);
+            padding: 12px 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         .refresh-btn {
-            background-color: #2b2f42;
+            background: linear-gradient(135deg, #ff9900 0%, #ff5500 100%);
             color: #fff;
-            border: 1px solid #444b6e;
-            padding: 10px 18px;
-            border-radius: 8px;
+            border: none;
+            padding: 0 22px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
-            height: 40px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 700;
+            font-size: 14px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(255, 153, 0, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .refresh-btn:hover {
-            background-color: #3b405a;
-            border-color: #ffaa00;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 153, 0, 0.5);
+            filter: brightness(1.1);
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0);
         }
 
         .filter-select {
-            background-color: #181b29;
-            color: #ffffff;
-            border: 1px solid #444b6e;
-            padding: 0 14px;
-            border-radius: 8px;
-            height: 40px;
+            background-color: #0f111e;
+            color: #d1d5f0;
+            border: 1px solid #282c47;
+            padding: 0 38px 0 16px;
+            border-radius: 10px;
+            height: 42px;
             outline: none;
             cursor: pointer;
             font-size: 14px;
-            transition: border-color 0.2s;
+            font-weight: 600;
+            transition: all 0.3s;
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='%23ffaa00' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
         }
 
         .filter-select:hover, .filter-select:focus {
             border-color: #ffaa00;
+            box-shadow: 0 0 12px rgba(255, 170, 0, 0.2);
         }
 
+        /* Таблица */
         .table-container {
             width: 100%;
-            max-width: 900px;
-            overflow-x: auto;
-            background: #181b29;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-            border: 1px solid #2b2f42;
+            max-width: 950px;
+            overflow: hidden;
+            background: rgba(14, 16, 27, 0.7);
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
         }
 
         table {
@@ -96,69 +134,121 @@
         }
 
         th, td {
-            padding: 14px 18px;
-            border-bottom: 1px solid #2b2f42;
+            padding: 16px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         th {
-            background-color: #121420;
-            color: #8a8fbd;
-            font-size: 13px;
+            background-color: rgba(9, 10, 18, 0.8);
+            color: #5c6494;
+            font-size: 12px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 1.2px;
         }
 
-        tr:last-child td {
+        tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:last-child td {
             border-bottom: none;
         }
 
-        tr:hover {
-            background-color: #1f2335;
+        tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.03);
         }
 
+        /* Игровые плашки */
         .anarchy-badge {
             color: #ffaa00;
-            font-weight: bold;
-            background: rgba(255, 170, 0, 0.1);
-            padding: 4px 10px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 170, 0, 0.3);
+            font-weight: 700;
+            background: rgba(255, 170, 0, 0.08);
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 170, 0, 0.25);
             display: inline-block;
+            font-size: 13px;
+            letter-spacing: 0.3px;
         }
 
         .rarity-badge {
-            font-weight: bold;
-            padding: 4px 10px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.05);
+            font-weight: 800;
+            padding: 6px 14px;
+            border-radius: 8px;
             display: inline-block;
-            font-size: 13px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+        }
+
+        .event-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.3px;
         }
 
         .status-active {
-            color: #55ff55;
-            font-weight: bold;
+            color: #00ff88;
+            font-weight: 700;
             font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 255, 136, 0.08);
+            padding: 5px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
+
+        .status-pulse {
+            width: 8px;
+            height: 8px;
+            background-color: #00ff88;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00ff88;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 255, 136, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
         }
 
         .loading, .error {
             text-align: center;
-            padding: 30px;
-            color: #8a8fbd;
+            padding: 40px;
+            color: #6b729c;
+            font-weight: 600;
         }
 
         .error {
-            color: #ff5555;
+            color: #ff4757;
+        }
+
+        /* Анимация при появлении строк */
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-    <h1>Активные ивенты HolyWorld</h1>
-    <div id="status" class="status-bar">Загрузка...</div>
+    <h1>HOLYWORLD EVENTS</h1>
+    <div id="status" class="status-bar">Синхронизация с сервером...</div>
 
     <div class="controls-container">
-        <button class="refresh-btn" onclick="fetchEvents()">🔄 Обновить список</button>
+        <button class="refresh-btn" onclick="fetchEvents()">
+            <span>🔄</span> Обновить
+        </button>
         
         <select id="filter-name" class="filter-select" onchange="applyFilters()">
             <option value="">Все ивенты</option>
@@ -174,14 +264,14 @@
             <thead>
                 <tr>
                     <th>Анархия</th>
-                    <th>Название ивента</th>
+                    <th>Ивент</th>
                     <th>Редкость</th>
                     <th>Статус</th>
                 </tr>
             </thead>
             <tbody id="events-list">
                 <tr>
-                    <td colspan="4" class="loading">Получение данных...</td>
+                    <td colspan="4" class="loading">Загрузка данных...</td>
                 </tr>
             </tbody>
         </table>
@@ -198,30 +288,30 @@
             'roskoshniy': { name: 'Роскошный', color: '#e040fb', priority: 80 },
             'роскошный': { name: 'Роскошный', color: '#e040fb', priority: 80 },
             
-            'epic': { name: 'Эпический', color: '#aa00aa', priority: 70 },
-            'эпический': { name: 'Эпический', color: '#aa00aa', priority: 70 },
+            'epic': { name: 'Эпический', color: '#b347ff', priority: 70 },
+            'эпический': { name: 'Эпический', color: '#b347ff', priority: 70 },
             
-            'rare': { name: 'Редкий', color: '#55ffff', priority: 60 },
-            'rare_plains': { name: 'Редкий (Равнина)', color: '#55ffff', priority: 60 },
-            'rare_desert': { name: 'Редкий (Пустыня)', color: '#55ffff', priority: 60 },
-            'редкий': { name: 'Редкий', color: '#55ffff', priority: 60 },
+            'rare': { name: 'Редкий', color: '#00e5ff', priority: 60 },
+            'rare_plains': { name: 'Редкий (Равнина)', color: '#00e5ff', priority: 60 },
+            'rare_desert': { name: 'Редкий (Пустыня)', color: '#00e5ff', priority: 60 },
+            'редкий': { name: 'Редкий', color: '#00e5ff', priority: 60 },
             
-            'explosive': { name: 'Взрывной', color: '#ff5555', priority: 50 },
-            'peaceful': { name: 'Мирный', color: '#55ff55', priority: 40 },
+            'explosive': { name: 'Взрывной', color: '#ff3366', priority: 50 },
+            'peaceful': { name: 'Мирный', color: '#00ff88', priority: 40 },
             
-            'default': { name: 'Обычный', color: '#aaaaaa', priority: 10 },
-            'normal': { name: 'Обычный', color: '#aaaaaa', priority: 10 },
-            'normal_plains': { name: 'Обычный (Равнина)', color: '#aaaaaa', priority: 10 },
-            'normal_desert': { name: 'Обычный (Пустыня)', color: '#aaaaaa', priority: 10 },
-            'ship_default': { name: 'Обычный', color: '#aaaaaa', priority: 10 },
-            'ship_default_f': { name: 'Обычный', color: '#aaaaaa', priority: 10 },
-            'обычный': { name: 'Обычный', color: '#aaaaaa', priority: 10 }
+            'default': { name: 'Обычный', color: '#9098be', priority: 10 },
+            'normal': { name: 'Обычный', color: '#9098be', priority: 10 },
+            'normal_plains': { name: 'Обычный (Равнина)', color: '#9098be', priority: 10 },
+            'normal_desert': { name: 'Обычный (Пустыня)', color: '#9098be', priority: 10 },
+            'ship_default': { name: 'Обычный', color: '#9098be', priority: 10 },
+            'ship_default_f': { name: 'Обычный', color: '#9098be', priority: 10 },
+            'обычный': { name: 'Обычный', color: '#9098be', priority: 10 }
         };
 
         let rawEventsList = [];
 
         function parseRarity(rawRarity) {
-            if (!rawRarity) return { name: 'Обычный', color: '#aaaaaa', priority: 10 };
+            if (!rawRarity) return { name: 'Обычный', color: '#9098be', priority: 10 };
             const key = rawRarity.toString().toLowerCase();
             return RARITY_MAP[key] || { name: rawRarity, color: '#ffffff', priority: 20 };
         }
@@ -244,11 +334,10 @@
             const tbody = document.getElementById('events-list');
             const statusEl = document.getElementById('status');
             
-            // Запоминаем текущий выбор пользователя перед очисткой таблицы
             const savedSelectedName = document.getElementById('filter-name').value;
             const savedSelectedRarity = document.getElementById('filter-rarity').value;
 
-            tbody.innerHTML = '<tr><td colspan="4" class="loading">Загрузка ивентов...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="loading">Загрузка активных ивентов...</td></tr>';
 
             const proxies = [
                 url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
@@ -272,12 +361,12 @@
             }
 
             if (!data) {
-                statusEl.innerText = 'Ошибка подключения к API';
-                tbody.innerHTML = '<tr><td colspan="4" class="error">Не удалось получить данные с сервера.</td></tr>';
+                statusEl.innerText = 'Ошибка подключения к серверам HolyWorld';
+                tbody.innerHTML = '<tr><td colspan="4" class="error">Не удалось загрузить данные. Проверьте соединение.</td></tr>';
                 return;
             }
 
-            statusEl.innerText = `Обновлено: ${new Date().toLocaleTimeString('ru-RU')}`;
+            statusEl.innerText = `Последнее обновление: ${new Date().toLocaleTimeString('ru-RU')}`;
             rawEventsList = [];
 
             Object.keys(data).forEach(serverKey => {
@@ -302,7 +391,6 @@
                 }
             });
 
-            // Сортировка по редкости (высокий приоритет вверху)
             rawEventsList.sort((a, b) => {
                 if (b.rarityPriority !== a.rarityPriority) {
                     return b.rarityPriority - a.rarityPriority;
@@ -310,10 +398,7 @@
                 return a.serverNum - b.serverNum;
             });
 
-            // Обновляем варианты в списках и восстанавливаем выбор
             updateFilterOptions(savedSelectedName, savedSelectedRarity);
-            
-            // Фильтруем данные по сохранённому выбору
             applyFilters();
         }
 
@@ -329,14 +414,12 @@
                 raritySet.add(item.rarityName);
             });
 
-            // Пересобираем ивенты, восстанавливая выбранный опшн (если он есть в новом ответе API)
             nameSelect.innerHTML = '<option value="">Все ивенты</option>';
             Array.from(namesSet).sort().forEach(name => {
                 const isSelected = (name === targetName) ? 'selected' : '';
                 nameSelect.innerHTML += `<option value="${name}" ${isSelected}>${name}</option>`;
             });
 
-            // Пересобираем редкость, восстанавливая выбранный опшн
             raritySelect.innerHTML = '<option value="">Вся редкость</option>';
             Array.from(raritySet).sort().forEach(rarity => {
                 const isSelected = (rarity === targetRarity) ? 'selected' : '';
@@ -362,21 +445,26 @@
             tbody.innerHTML = '';
 
             if (events.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="loading">Нет ивентов по выбранным фильтрам.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="loading">Нет активных ивентов по фильтру.</td></tr>';
                 return;
             }
 
             events.forEach(item => {
                 const row = document.createElement('tr');
+                row.className = 'fade-in';
                 row.innerHTML = `
                     <td><span class="anarchy-badge">${item.serverFormatted}</span></td>
-                    <td><strong>${item.displayName}</strong></td>
+                    <td><span class="event-name">${item.displayName}</span></td>
                     <td>
-                        <span class="rarity-badge" style="color: ${item.rarityColor}; border: 1px solid ${item.rarityColor}55;">
+                        <span class="rarity-badge" style="color: ${item.rarityColor}; background: ${item.rarityColor}12; border: 1px solid ${item.rarityColor}40; box-shadow: 0 0 12px ${item.rarityColor}20;">
                             ${item.rarityName}
                         </span>
                     </td>
-                    <td><span class="status-active">🟢 Идёт сейчас</span></td>
+                    <td>
+                        <span class="status-active">
+                            <span class="status-pulse"></span> Идёт сейчас
+                        </span>
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
