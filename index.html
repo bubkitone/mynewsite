@@ -152,7 +152,6 @@
     </div>
 
     <script>
-        // Таблица цветов под все редкости API HolyWorld
         const RARITY_COLORS = {
             'normal': '#aaaaaa',
             'обычный': '#aaaaaa',
@@ -173,7 +172,6 @@
             'peaceful': '#55ff55'
         };
 
-        // Форматирование названий серверов (LITE_ANARCHY_32 -> Lite №32)
         function formatServerName(serverKey) {
             const numMatch = serverKey.match(/\d+/);
             const num = numMatch ? numMatch[0] : '';
@@ -199,7 +197,6 @@
             const statusEl = document.getElementById('status');
             tbody.innerHTML = '<tr><td colspan="4" class="loading">Загрузка ивентов...</td></tr>';
 
-            // Набор CORS-прокси на случай блокировок
             const proxies = [
                 url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
                 url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -232,7 +229,7 @@
 
             let hasEvents = false;
 
-            // Сортируем серверы по номеру анархии для удобства
+            // Сортируем серверы по номеру анархии
             const servers = Object.keys(data).sort((a, b) => {
                 const numA = parseInt(a.match(/\d+/)?.[0] || 0);
                 const numB = parseInt(b.match(/\d+/)?.[0] || 0);
@@ -242,13 +239,18 @@
             servers.forEach(serverKey => {
                 const eventList = data[serverKey];
                 
+                // Фильтр: обрабатываем только если есть хотя бы 1 активный ивент
                 if (Array.isArray(eventList) && eventList.length > 0) {
                     eventList.forEach(event => {
+                        const displayName = event.metadata?.displayName || event.name || event.title;
+                        
+                        // Если ивент пустышка или без названия — пропускаем его
+                        if (!displayName) return;
+
                         hasEvents = true;
                         const row = document.createElement('tr');
 
                         const serverName = formatServerName(serverKey);
-                        const displayName = event.metadata?.displayName || event.id || 'Неизвестный ивент';
                         const rarity = event.metadata?.rare || 'Обычный';
                         const rarityColor = getRarityColor(rarity);
 
@@ -267,12 +269,12 @@
                 }
             });
 
+            // Если список ивентов оказался пуст
             if (!hasEvents) {
-                tbody.innerHTML = '<tr><td colspan="4" class="loading">В данный момент нет активных ивентов.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="loading">На данный момент активных ивентов нет.</td></tr>';
             }
         }
 
-        // Автозапуск и обновление каждые 15 секунд
         fetchEvents();
         setInterval(fetchEvents, 15000);
     </script>
