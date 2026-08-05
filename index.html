@@ -548,43 +548,57 @@
             }
         });
 
+        async function fetchJSON(url) {
+            const res = await fetch(url, {
+                cache: 'no-store',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        }
+
         async function fetchEvents() {
             const tbody = document.getElementById('events-list');
             const statusEl = document.getElementById('status');
 
             tbody.innerHTML = '<tr><td colspan="4" class="loading">Обновление списка ивентов...</td></tr>';
 
-            const targetUrl = 'https://api.holyworld.me/v1/events';
-            
-            // Запросы напрямую + через прокси для надежности
+            // Метка времени "ломает" любое кеширование — и в браузере, и на прокси,
+            // которые иначе могут отдавать старый снимок вместо актуального.
+            const targetUrl = `https://api.holyworld.me/v1/events?_=${Date.now()}`;
+
+            // Запросы напрямую + через прокси для надежности (прокси — только на случай CORS-сбоя)
             const fetchMethods = [
-                () => fetch(targetUrl),
-                () => fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`),
-                () => fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`)
+                { label: 'напрямую', run: () => fetchJSON(targetUrl) },
+                { label: 'corsproxy.io', run: () => fetchJSON(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`) },
+                { label: 'allorigins.win', run: () => fetchJSON(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`) }
             ];
 
             let data = null;
+            let usedMethod = null;
 
-            for (let method of fetchMethods) {
+            for (const method of fetchMethods) {
                 try {
-                    const res = await method();
-                    if (res.ok) {
-                        data = await res.json();
-                        break;
-                    }
+                    data = await method.run();
+                    usedMethod = method.label;
+                    break;
                 } catch (e) {
-                    console.warn('Сбой запроса, пробуем альтернативный способ...');
+                    console.warn(`[${method.label}] сбой запроса:`, e.message);
                 }
             }
 
             if (!data) {
                 statusEl.innerText = 'Ошибка загрузки данных';
-                tbody.innerHTML = '<tr><td colspan="4" class="error">Не удалось получить данные с сервера HolyWorld.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="error">Не удалось получить данные с сервера HolyWorld (проверьте консоль браузера).</td></tr>';
                 document.getElementById('counter-value').innerText = '0';
                 return;
             }
 
-            statusEl.innerText = `Обновлено: ${new Date().toLocaleTimeString('ru-RU')}`;
+            // Диагностика: сколько всего событий вернул API до фильтрации по активности
+            const rawTotal = Object.values(data).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+            console.log(`[HolyWorld] источник: ${usedMethod}, серверов с данными: ${Object.keys(data).length}, событий в сыром ответе: ${rawTotal}`);
+
+            statusEl.innerText = `Обновлено: ${new Date().toLocaleTimeString('ru-RU')} · источник: ${usedMethod} · в ответе API: ${rawTotal}`;
             rawEventsList = [];
 
             // Обрабатываем ТОЛЬКО активные в текущий момент ивенты
