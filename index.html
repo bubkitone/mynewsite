@@ -481,6 +481,55 @@
             return serverKey;
         }
 
+        // --- Определение, активен ли ивент прямо сейчас ---
+        // API не задокументирован публично, поэтому проверяем сразу
+        // все распространённые варианты полей активности/окончания.
+        // Если ни одного признака "неактивности" не найдено — считаем ивент активным.
+        function isEventActive(event) {
+            if (!event) return false;
+
+            // 1. Явные булевы флаги
+            if (event.active === false) return false;
+            if (event.isActive === false) return false;
+            if (event.enabled === false) return false;
+            if (event.finished === true) return false;
+            if (event.expired === true) return false;
+            if (event.ended === true) return false;
+
+            // 2. Текстовый статус
+            const statusRaw = (event.status || event.state || event.metadata?.status || '')
+                .toString()
+                .toLowerCase();
+            const inactiveStatuses = ['ended', 'end', 'expired', 'finished', 'inactive', 'closed', 'stopped', 'completed', 'done', 'завершен', 'завершён', 'неактивен'];
+            if (statusRaw && inactiveStatuses.includes(statusRaw)) return false;
+
+            // 3. Временные метки окончания (мс или сек, ISO-строка)
+            const endCandidates = [
+                event.endTime, event.endsAt, event.expiresAt, event.expireAt,
+                event.finishTime, event.finishesAt, event.timeEnd, event.end,
+                event.metadata?.endTime, event.metadata?.expiresAt, event.metadata?.timeEnd
+            ];
+            for (const raw of endCandidates) {
+                if (raw === undefined || raw === null || raw === '') continue;
+                let ts = typeof raw === 'number' ? raw : Date.parse(raw);
+                if (!isNaN(ts)) {
+                    if (ts < 10000000000) ts *= 1000; // секунды -> мс
+                    if (ts <= Date.now()) return false;
+                }
+            }
+
+            // 4. Оставшееся время (если <= 0 — ивент уже закончился)
+            const remainingCandidates = [
+                event.timeLeft, event.remainingTime, event.secondsLeft,
+                event.metadata?.timeLeft, event.metadata?.remainingTime
+            ];
+            for (const rem of remainingCandidates) {
+                if (typeof rem === 'number' && rem <= 0) return false;
+            }
+
+            return true;
+        }
+
         function toggleDropdown(id) {
             const el = document.getElementById(id);
             const isActive = el.classList.contains('active');
@@ -543,6 +592,9 @@
                 const eventList = data[serverKey];
                 if (Array.isArray(eventList)) {
                     eventList.forEach(event => {
+                        // Пропускаем неактивные/завершённые ивенты
+                        if (!isEventActive(event)) return;
+
                         const displayName = event.metadata?.displayName || event.name || event.title;
                         if (!displayName) return;
 
@@ -581,6 +633,16 @@
                 nameCounts[item.displayName] = (nameCounts[item.displayName] || 0) + 1;
                 rarityCounts[item.rarityName] = (rarityCounts[item.rarityName] || 0) + 1;
             });
+
+            // Если выбранное имя/редкость больше не встречаются среди активных ивентов — сбрасываем фильтр
+            if (selectedNameVal && !nameCounts[selectedNameVal]) {
+                selectedNameVal = '';
+                document.querySelector('#dropdown-name .selected-text').innerText = 'Все ивенты';
+            }
+            if (selectedRarityVal && !rarityCounts[selectedRarityVal]) {
+                selectedRarityVal = '';
+                document.querySelector('#dropdown-rarity .selected-text').innerText = 'Вся редкость';
+            }
 
             const nameMenu = document.querySelector('#dropdown-name .dropdown-menu');
             let nameHTML = `<div class="dropdown-item ${selectedNameVal === '' ? 'selected' : ''}" onclick="selectFilter('name', '')">
@@ -691,8 +753,9 @@
             });
         }
 
-        // Автообновление каждые 30 секунд для получения актуальных данных
-        setInterval(fetchEvents, 30000);
+        // Автообновление каждые 15 секунд, чтобы список ивентов
+        // быстрее отражал изменения (появление/окончание)
+        setInterval(fetchEvents, 15000);
 
         fetchEvents();
     </script>
