@@ -28,6 +28,14 @@
             text-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
         }
 
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
         .refresh-btn {
             background-color: #2b2f42;
             color: #fff;
@@ -35,12 +43,17 @@
             padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
-            margin-bottom: 20px;
             transition: all 0.2s;
         }
 
         .refresh-btn:hover {
             background-color: #3b405a;
+        }
+
+        .status {
+            font-size: 13px;
+            color: #8a8fbd;
+            margin-bottom: 15px;
         }
 
         .table-container {
@@ -86,6 +99,16 @@
             border-radius: 4px;
             background: rgba(255, 255, 255, 0.05);
             display: inline-block;
+            text-transform: capitalize;
+        }
+
+        .anarchy-badge {
+            color: #ffaa00;
+            font-weight: bold;
+            background: rgba(255, 170, 0, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 170, 0, 0.3);
         }
 
         .loading, .error {
@@ -98,16 +121,33 @@
             color: #ff5555;
         }
 
-        .anarchy-num {
-            color: #ffaa00;
-            font-weight: bold;
+        /* Окно отладки (скрыто по умолчанию, нужно если API вернул неизвестный формат) */
+        #debug {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 900px;
+            background: #121420;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #55ff55;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: none;
         }
     </style>
 </head>
 <body>
 
     <h1>Активные ивенты HolyWorld</h1>
-    <button class="refresh-btn" onclick="fetchEvents()">🔄 Обновить список</button>
+    
+    <div class="controls">
+        <button class="refresh-btn" onclick="fetchEvents()">🔄 Обновить список</button>
+        <button class="refresh-btn" onclick="toggleDebug()">🐞 Переключить отладку</button>
+    </div>
+
+    <div id="status-text" class="status">Готов к загрузке...</div>
 
     <div class="table-container">
         <table>
@@ -127,8 +167,17 @@
         </table>
     </div>
 
+    <pre id="debug"></pre>
+
     <script>
-        // Цвета под популярные категории и редкости ивентов
+        // Список резервных CORS-прокси на случай блокировки
+        const PROXIES = [
+            (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+            (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+            (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+        ];
+
+        // Карта цветов редкостей
         const RARITY_COLORS = {
             'common': '#aaaaaa',
             'uncommon': '#55ff55',
@@ -144,7 +193,12 @@
 
         function formatDate(timestamp) {
             if (!timestamp) return '—';
+            // Если пришли секунды вместо миллисекунд
+            if (typeof timestamp === 'number' && timestamp < 10000000000) {
+                timestamp *= 1000;
+            }
             const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return timestamp; // fallback
             return date.toLocaleString('ru-RU', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -159,25 +213,74 @@
             return RARITY_COLORS[key] || '#ffffff';
         }
 
+        // Преобразование кода сервера (напр. LITE_ANARCHY_40 -> №40 Lite)
+        function formatServerName(serverRaw) {
+            if (!serverRaw) return '—';
+            let str = serverRaw.toString();
+            const match = str.match(/\d+/);
+            const num = match ? match[0] : '';
+
+            if (str.toUpperCase().includes('LITE')) return `№ ${num} (Lite)`;
+            if (str.toUpperCase().includes('GRIEF')) return `№ ${num} (Grief)`;
+            if (num) return `№ ${num}`;
+            return str;
+        }
+
+        function toggleDebug() {
+            const debugEl = document.getElementById('debug');
+            debugEl.style.display = debugEl.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function fetchWithFallback(targetUrl) {
+            const statusEl = document.getElementById('status-text');
+            
+            for (let i = 0; i < PROXIES.length; i++) {
+                const proxiedUrl = PROXIES[i](targetUrl);
+                try {
+                    statusEl.innerText = `Подключение к API (Попытка ${i + 1})...`;
+                    const res = await fetch(proxiedUrl);
+                    if (res.ok) {
+                        return await res.json();
+                    }
+                } catch (e) {
+                    console.warn(`Прокси ${i + 1} не ответил:`, e);
+                }
+            }
+            throw new Error('Все прокси-серверы недоступны или заблокированы');
+        }
+
         async function fetchEvents() {
             const tbody = document.getElementById('events-list');
-            tbody.innerHTML = '<tr><td colspan="4" class="loading">Загрузка ивентов...</td></tr>';
+            const statusEl = document.getElementById('status-text');
+            const debugEl = document.getElementById('debug');
 
-            // Используем публичный CORS-прокси для обхода блокировки
-            const proxyUrl = 'https://api.allorigins.win/raw?url=';
-            const apiUrl = 'https://api.holyworld.me/v1/events';
+            tbody.innerHTML = '<tr><td colspan="4" class="loading">Загрузка данных...</td></tr>';
 
             try {
-                const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
-                if (!response.ok) throw new Error('Ошибка HTTP: ' + response.status);
+                const targetUrl = 'https://api.holyworld.me/v1/events';
+                const data = await fetchWithFallback(targetUrl);
                 
-                const data = await response.json();
-                
-                // Извлекаем ивенты из возможной структуры
-                const events = Array.isArray(data) ? data : (data.events || data.result || []);
+                statusEl.innerText = `Успешно обновлено в ${new Date().toLocaleTimeString()}`;
+                debugEl.innerText = JSON.stringify(data, null, 2);
+
+                // Извлечение массива ивентов из разной возможной структуры JSON
+                let events = [];
+                if (Array.isArray(data)) {
+                    events = data;
+                } else if (typeof data === 'object' && data !== null) {
+                    events = data.events || data.result || data.data || [];
+                    // Если API возвращает объект с серверами в качестве ключей
+                    if (events.length === 0 && !data.error) {
+                        for (const key in data) {
+                            if (Array.isArray(data[key])) {
+                                data[key].forEach(e => events.push({...e, server: e.server || key}));
+                            }
+                        }
+                    }
+                }
 
                 if (events.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="loading">На данный момент активных ивентов нет.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="loading">Сейчас нет активных ивентов.</td></tr>';
                     return;
                 }
 
@@ -186,20 +289,22 @@
                 events.forEach((event) => {
                     const row = document.createElement('tr');
 
-                    // Поля с возможными названиями ключей из API HolyWorld
-                    const anarchy = event.anarchy || event.server || event.subserver || event.anarchyNumber || '—';
-                    const name = event.name || event.title || event.eventName || 'Без названия';
+                    const serverRaw = event.server || event.anarchy || event.subserver || event.serverName || '—';
+                    const anarchyFormatted = formatServerName(serverRaw);
+                    
+                    const name = event.name || event.title || event.eventName || 'Ивент';
                     const rarity = event.rarity || event.type || null;
+                    
                     const startTime = event.startTime || event.start_time || event.startedAt;
                     const endTime = event.endTime || event.end_time || event.endsAt;
 
                     const rarityColor = getRarityColor(rarity);
 
                     row.innerHTML = `
-                        <td class="anarchy-num">№ ${anarchy}</td>
+                        <td><span class="anarchy-badge">${anarchyFormatted}</span></td>
                         <td><strong>${name}</strong></td>
                         <td>
-                            ${rarity ? `<span class="rarity-badge" style="color: ${rarityColor}; border: 1px solid ${rarityColor}44;">${rarity}</span>` : '—'}
+                            ${rarity ? `<span class="rarity-badge" style="color: ${rarityColor}; border: 1px solid ${rarityColor}55;">${rarity}</span>` : '—'}
                         </td>
                         <td>${formatDate(startTime)} / ${formatDate(endTime)}</td>
                     `;
@@ -209,11 +314,12 @@
 
             } catch (err) {
                 console.error(err);
-                tbody.innerHTML = `<tr><td colspan="4" class="error">Не удалось загрузить данные (${err.message})</td></tr>`;
+                statusEl.innerText = 'Ошибка загрузки';
+                tbody.innerHTML = `<tr><td colspan="4" class="error">Не удалось получить данные с сервера. (${err.message})</td></tr>`;
             }
         }
 
-        // Загрузка при открытии и автообновление раз в 30 секунд
+        // Автозагрузка
         fetchEvents();
         setInterval(fetchEvents, 30000);
     </script>
