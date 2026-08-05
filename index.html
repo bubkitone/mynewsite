@@ -188,7 +188,6 @@
     </div>
 
     <script>
-        // Перевод названий и определение приоритета (чем больше число, тем выше в списке)
         const RARITY_MAP = {
             'legendary': { name: 'Легендарный', color: '#ffaa00', priority: 100 },
             'легендарный': { name: 'Легендарный', color: '#ffaa00', priority: 100 },
@@ -244,6 +243,11 @@
         async function fetchEvents() {
             const tbody = document.getElementById('events-list');
             const statusEl = document.getElementById('status');
+            
+            // Запоминаем текущий выбор пользователя перед очисткой таблицы
+            const savedSelectedName = document.getElementById('filter-name').value;
+            const savedSelectedRarity = document.getElementById('filter-rarity').value;
+
             tbody.innerHTML = '<tr><td colspan="4" class="loading">Загрузка ивентов...</td></tr>';
 
             const proxies = [
@@ -276,7 +280,6 @@
             statusEl.innerText = `Обновлено: ${new Date().toLocaleTimeString('ru-RU')}`;
             rawEventsList = [];
 
-            // Собираем плоский массив всех ивентов
             Object.keys(data).forEach(serverKey => {
                 const eventList = data[serverKey];
                 if (Array.isArray(eventList)) {
@@ -299,7 +302,7 @@
                 }
             });
 
-            // Сортировка: Сначала по ценности редкости (Leg, Epic -> Normal), затем по номеру Анархии
+            // Сортировка по редкости (высокий приоритет вверху)
             rawEventsList.sort((a, b) => {
                 if (b.rarityPriority !== a.rarityPriority) {
                     return b.rarityPriority - a.rarityPriority;
@@ -307,16 +310,16 @@
                 return a.serverNum - b.serverNum;
             });
 
-            updateFilterOptions();
-            renderTable(rawEventsList);
+            // Обновляем варианты в списках и восстанавливаем выбор
+            updateFilterOptions(savedSelectedName, savedSelectedRarity);
+            
+            // Фильтруем данные по сохранённому выбору
+            applyFilters();
         }
 
-        function updateFilterOptions() {
+        function updateFilterOptions(targetName, targetRarity) {
             const nameSelect = document.getElementById('filter-name');
             const raritySelect = document.getElementById('filter-rarity');
-
-            const currentSelectedName = nameSelect.value;
-            const currentSelectedRarity = raritySelect.value;
 
             const namesSet = new Set();
             const raritySet = new Set();
@@ -326,14 +329,18 @@
                 raritySet.add(item.rarityName);
             });
 
+            // Пересобираем ивенты, восстанавливая выбранный опшн (если он есть в новом ответе API)
             nameSelect.innerHTML = '<option value="">Все ивенты</option>';
             Array.from(namesSet).sort().forEach(name => {
-                nameSelect.innerHTML += `<option value="${name}" ${name === currentSelectedName ? 'selected' : ''}>${name}</option>`;
+                const isSelected = (name === targetName) ? 'selected' : '';
+                nameSelect.innerHTML += `<option value="${name}" ${isSelected}>${name}</option>`;
             });
 
+            // Пересобираем редкость, восстанавливая выбранный опшн
             raritySelect.innerHTML = '<option value="">Вся редкость</option>';
             Array.from(raritySet).sort().forEach(rarity => {
-                raritySelect.innerHTML += `<option value="${rarity}" ${rarity === currentSelectedRarity ? 'selected' : ''}>${rarity}</option>`;
+                const isSelected = (rarity === targetRarity) ? 'selected' : '';
+                raritySelect.innerHTML += `<option value="${rarity}" ${isSelected}>${rarity}</option>`;
             });
         }
 
@@ -375,7 +382,6 @@
             });
         }
 
-        // Вызов при первой загрузке страницы (автообновление раз в N сек полностью удалено)
         fetchEvents();
     </script>
 </body>
