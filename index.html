@@ -151,10 +151,10 @@
             transform: rotate(180deg);
         }
 
-        /* КАСТОМНЫЙ ДРОПДАУН */
+        /* СТИЛИ КАСТОМНОГО ДРОПДАУНА */
         .custom-dropdown {
             position: relative;
-            min-width: 210px;
+            min-width: 220px;
         }
 
         .dropdown-selected {
@@ -194,8 +194,8 @@
             top: calc(100% + 8px);
             left: 0;
             right: 0;
-            background: rgba(13, 15, 24, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #0d0f18;
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 12px;
             padding: 6px;
             display: none;
@@ -203,8 +203,7 @@
             gap: 2px;
             max-height: 250px;
             overflow-y: auto;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.7);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
             z-index: 200;
         }
 
@@ -227,18 +226,18 @@
         }
 
         .dropdown-item:hover {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
         }
 
         .dropdown-item.selected {
-            background: rgba(255, 170, 0, 0.12);
+            background: rgba(255, 170, 0, 0.15);
             color: var(--accent-color);
             font-weight: 700;
         }
 
         .item-badge {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.06);
             color: #7c85b1;
             padding: 2px 8px;
             border-radius: 6px;
@@ -387,7 +386,7 @@
             Обновить
         </button>
         
-        <!-- Кастомный фильтр "Ивент" -->
+        <!-- Кастомный стилизованный выпадающий список "Ивент" -->
         <div class="custom-dropdown" id="dropdown-name">
             <div class="dropdown-selected" onclick="toggleDropdown('dropdown-name')">
                 <span class="selected-text">Все ивенты</span>
@@ -396,7 +395,7 @@
             <div class="dropdown-menu"></div>
         </div>
 
-        <!-- Кастомный фильтр "Редкость" -->
+        <!-- Кастомный стилизованный выпадающий список "Редкость" -->
         <div class="custom-dropdown" id="dropdown-rarity">
             <div class="dropdown-selected" onclick="toggleDropdown('dropdown-rarity')">
                 <span class="selected-text">Вся редкость</span>
@@ -488,7 +487,7 @@
             return serverKey;
         }
 
-        /* КАСТОМНЫЕ ДРОПДАУНЫ LOGIC */
+        /* УПРАВЛЕНИЕ КАСТОМНЫМИ ДРОПДАУНАМИ */
         function toggleDropdown(id) {
             const el = document.getElementById(id);
             const isActive = el.classList.contains('active');
@@ -577,9 +576,8 @@
             applyFilters();
         }
 
-        /* ПОСТРОЕНИЕ ВЫПАДАЮЩИХ СПИСКОВ СО СЧЕТЧИКАМИ */
+        /* ГЕНЕРАЦИЯ СПИСКОВ СО СЧЕТЧИКАМИ ИВЕНТОВ И РЕДКОСТЕЙ */
         function updateDropdownMenus() {
-            // Подсчет количества каждого ивента
             const nameCounts = {};
             const rarityCounts = {};
 
@@ -588,7 +586,7 @@
                 rarityCounts[item.rarityName] = (rarityCounts[item.rarityName] || 0) + 1;
             });
 
-            // Рендер меню Ивентов
+            // Меню ивентов со счетчиками
             const nameMenu = document.querySelector('#dropdown-name .dropdown-menu');
             let nameHTML = `<div class="dropdown-item ${selectedNameVal === '' ? 'selected' : ''}" onclick="selectFilter('name', '')">
                 <span>Все ивенты</span>
@@ -604,7 +602,7 @@
             });
             nameMenu.innerHTML = nameHTML;
 
-            // Рендер меню Редкости
+            // Меню редкости со счетчиками
             const rarityMenu = document.querySelector('#dropdown-rarity .dropdown-menu');
             let rarityHTML = `<div class="dropdown-item ${selectedRarityVal === '' ? 'selected' : ''}" onclick="selectFilter('rarity', '')">
                 <span>Вся редкость</span>
