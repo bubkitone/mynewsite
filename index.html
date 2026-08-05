@@ -32,20 +32,29 @@
         .status-bar {
             font-size: 13px;
             color: #8a8fbd;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-align: center;
+        }
+
+        .controls-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
         }
 
         .refresh-btn {
             background-color: #2b2f42;
             color: #fff;
             border: 1px solid #444b6e;
-            padding: 10px 20px;
+            padding: 10px 18px;
             border-radius: 8px;
             cursor: pointer;
-            margin-bottom: 20px;
             transition: all 0.2s;
             font-weight: 500;
+            height: 40px;
         }
 
         .refresh-btn:hover {
@@ -53,9 +62,26 @@
             border-color: #ffaa00;
         }
 
+        .filter-select {
+            background-color: #181b29;
+            color: #ffffff;
+            border: 1px solid #444b6e;
+            padding: 0 14px;
+            border-radius: 8px;
+            height: 40px;
+            outline: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .filter-select:hover, .filter-select:focus {
+            border-color: #ffaa00;
+        }
+
         .table-container {
             width: 100%;
-            max-width: 850px;
+            max-width: 900px;
             overflow-x: auto;
             background: #181b29;
             border-radius: 12px;
@@ -107,7 +133,6 @@
             background: rgba(255, 255, 255, 0.05);
             display: inline-block;
             font-size: 13px;
-            text-transform: capitalize;
         }
 
         .status-active {
@@ -130,8 +155,19 @@
 <body>
 
     <h1>Активные ивенты HolyWorld</h1>
-    <button class="refresh-btn" onclick="fetchEvents()">🔄 Обновить список</button>
     <div id="status" class="status-bar">Загрузка...</div>
+
+    <div class="controls-container">
+        <button class="refresh-btn" onclick="fetchEvents()">🔄 Обновить список</button>
+        
+        <select id="filter-name" class="filter-select" onchange="applyFilters()">
+            <option value="">Все ивенты</option>
+        </select>
+
+        <select id="filter-rarity" class="filter-select" onchange="applyFilters()">
+            <option value="">Вся редкость</option>
+        </select>
+    </div>
 
     <div class="table-container">
         <table>
@@ -152,25 +188,44 @@
     </div>
 
     <script>
-        const RARITY_COLORS = {
-            'normal': '#aaaaaa',
-            'обычный': '#aaaaaa',
-            'default': '#aaaaaa',
-            'normal_plains': '#55ff55',
-            'normal_desert': '#55ff55',
-            'rare': '#55ffff',
-            'rare_plains': '#55ffff',
-            'rare_desert': '#55ffff',
-            'редкий': '#55ffff',
-            'epic': '#aa00aa',
-            'эпический': '#aa00aa',
-            'legendary': '#ffaa00',
-            'легендарный': '#ffaa00',
-            'mythic': '#ff55ff',
-            'мифический': '#ff55ff',
-            'explosive': '#ff5555',
-            'peaceful': '#55ff55'
+        // Перевод названий и определение приоритета (чем больше число, тем выше в списке)
+        const RARITY_MAP = {
+            'legendary': { name: 'Легендарный', color: '#ffaa00', priority: 100 },
+            'легендарный': { name: 'Легендарный', color: '#ffaa00', priority: 100 },
+            'mythic': { name: 'Мифический', color: '#ff55ff', priority: 90 },
+            'мифический': { name: 'Мифический', color: '#ff55ff', priority: 90 },
+            
+            'ship_roskoshni_f': { name: 'Роскошный', color: '#e040fb', priority: 80 },
+            'roskoshniy': { name: 'Роскошный', color: '#e040fb', priority: 80 },
+            'роскошный': { name: 'Роскошный', color: '#e040fb', priority: 80 },
+            
+            'epic': { name: 'Эпический', color: '#aa00aa', priority: 70 },
+            'эпический': { name: 'Эпический', color: '#aa00aa', priority: 70 },
+            
+            'rare': { name: 'Редкий', color: '#55ffff', priority: 60 },
+            'rare_plains': { name: 'Редкий (Равнина)', color: '#55ffff', priority: 60 },
+            'rare_desert': { name: 'Редкий (Пустыня)', color: '#55ffff', priority: 60 },
+            'редкий': { name: 'Редкий', color: '#55ffff', priority: 60 },
+            
+            'explosive': { name: 'Взрывной', color: '#ff5555', priority: 50 },
+            'peaceful': { name: 'Мирный', color: '#55ff55', priority: 40 },
+            
+            'default': { name: 'Обычный', color: '#aaaaaa', priority: 10 },
+            'normal': { name: 'Обычный', color: '#aaaaaa', priority: 10 },
+            'normal_plains': { name: 'Обычный (Равнина)', color: '#aaaaaa', priority: 10 },
+            'normal_desert': { name: 'Обычный (Пустыня)', color: '#aaaaaa', priority: 10 },
+            'ship_default': { name: 'Обычный', color: '#aaaaaa', priority: 10 },
+            'ship_default_f': { name: 'Обычный', color: '#aaaaaa', priority: 10 },
+            'обычный': { name: 'Обычный', color: '#aaaaaa', priority: 10 }
         };
+
+        let rawEventsList = [];
+
+        function parseRarity(rawRarity) {
+            if (!rawRarity) return { name: 'Обычный', color: '#aaaaaa', priority: 10 };
+            const key = rawRarity.toString().toLowerCase();
+            return RARITY_MAP[key] || { name: rawRarity, color: '#ffffff', priority: 20 };
+        }
 
         function formatServerName(serverKey) {
             const numMatch = serverKey.match(/\d+/);
@@ -184,12 +239,6 @@
                 return `Grief №${num}`;
             }
             return serverKey;
-        }
-
-        function getRarityColor(rarity) {
-            if (!rarity) return '#ffffff';
-            const key = rarity.toString().toLowerCase();
-            return RARITY_COLORS[key] || '#ffffff';
         }
 
         async function fetchEvents() {
@@ -214,69 +263,120 @@
                         break;
                     }
                 } catch (e) {
-                    console.warn('Прокси не ответил, пробуем следующий...');
+                    console.warn('Прокси не ответил...');
                 }
             }
 
             if (!data) {
-                statusEl.innerText = 'Не удалось подключиться к API HolyWorld';
-                tbody.innerHTML = '<tr><td colspan="4" class="error">Ошибка загрузки данных. Попробуйте обновить позже.</td></tr>';
+                statusEl.innerText = 'Ошибка подключения к API';
+                tbody.innerHTML = '<tr><td colspan="4" class="error">Не удалось получить данные с сервера.</td></tr>';
                 return;
             }
 
-            statusEl.innerText = `Последнее обновление: ${new Date().toLocaleTimeString('ru-RU')}`;
-            tbody.innerHTML = '';
+            statusEl.innerText = `Обновлено: ${new Date().toLocaleTimeString('ru-RU')}`;
+            rawEventsList = [];
 
-            let hasEvents = false;
-
-            // Сортируем серверы по номеру анархии
-            const servers = Object.keys(data).sort((a, b) => {
-                const numA = parseInt(a.match(/\d+/)?.[0] || 0);
-                const numB = parseInt(b.match(/\d+/)?.[0] || 0);
-                return numA - numB;
-            });
-
-            servers.forEach(serverKey => {
+            // Собираем плоский массив всех ивентов
+            Object.keys(data).forEach(serverKey => {
                 const eventList = data[serverKey];
-                
-                // Фильтр: обрабатываем только если есть хотя бы 1 активный ивент
-                if (Array.isArray(eventList) && eventList.length > 0) {
+                if (Array.isArray(eventList)) {
                     eventList.forEach(event => {
                         const displayName = event.metadata?.displayName || event.name || event.title;
-                        
-                        // Если ивент пустышка или без названия — пропускаем его
                         if (!displayName) return;
 
-                        hasEvents = true;
-                        const row = document.createElement('tr');
+                        const rarityInfo = parseRarity(event.metadata?.rare);
 
-                        const serverName = formatServerName(serverKey);
-                        const rarity = event.metadata?.rare || 'Обычный';
-                        const rarityColor = getRarityColor(rarity);
-
-                        row.innerHTML = `
-                            <td><span class="anarchy-badge">${serverName}</span></td>
-                            <td><strong>${displayName}</strong></td>
-                            <td>
-                                <span class="rarity-badge" style="color: ${rarityColor}; border: 1px solid ${rarityColor}55;">
-                                    ${rarity}
-                                </span>
-                            </td>
-                            <td><span class="status-active">🟢 Идёт сейчас</span></td>
-                        `;
-                        tbody.appendChild(row);
+                        rawEventsList.push({
+                            serverKey,
+                            serverFormatted: formatServerName(serverKey),
+                            serverNum: parseInt(serverKey.match(/\d+/)?.[0] || 0),
+                            displayName,
+                            rarityName: rarityInfo.name,
+                            rarityColor: rarityInfo.color,
+                            rarityPriority: rarityInfo.priority
+                        });
                     });
                 }
             });
 
-            // Если список ивентов оказался пуст
-            if (!hasEvents) {
-                tbody.innerHTML = '<tr><td colspan="4" class="loading">На данный момент активных ивентов нет.</td></tr>';
-            }
+            // Сортировка: Сначала по ценности редкости (Leg, Epic -> Normal), затем по номеру Анархии
+            rawEventsList.sort((a, b) => {
+                if (b.rarityPriority !== a.rarityPriority) {
+                    return b.rarityPriority - a.rarityPriority;
+                }
+                return a.serverNum - b.serverNum;
+            });
+
+            updateFilterOptions();
+            renderTable(rawEventsList);
         }
 
+        function updateFilterOptions() {
+            const nameSelect = document.getElementById('filter-name');
+            const raritySelect = document.getElementById('filter-rarity');
+
+            const currentSelectedName = nameSelect.value;
+            const currentSelectedRarity = raritySelect.value;
+
+            const namesSet = new Set();
+            const raritySet = new Set();
+
+            rawEventsList.forEach(item => {
+                namesSet.add(item.displayName);
+                raritySet.add(item.rarityName);
+            });
+
+            nameSelect.innerHTML = '<option value="">Все ивенты</option>';
+            Array.from(namesSet).sort().forEach(name => {
+                nameSelect.innerHTML += `<option value="${name}" ${name === currentSelectedName ? 'selected' : ''}>${name}</option>`;
+            });
+
+            raritySelect.innerHTML = '<option value="">Вся редкость</option>';
+            Array.from(raritySet).sort().forEach(rarity => {
+                raritySelect.innerHTML += `<option value="${rarity}" ${rarity === currentSelectedRarity ? 'selected' : ''}>${rarity}</option>`;
+            });
+        }
+
+        function applyFilters() {
+            const selectedName = document.getElementById('filter-name').value;
+            const selectedRarity = document.getElementById('filter-rarity').value;
+
+            const filtered = rawEventsList.filter(item => {
+                const matchesName = !selectedName || item.displayName === selectedName;
+                const matchesRarity = !selectedRarity || item.rarityName === selectedRarity;
+                return matchesName && matchesRarity;
+            });
+
+            renderTable(filtered);
+        }
+
+        function renderTable(events) {
+            const tbody = document.getElementById('events-list');
+            tbody.innerHTML = '';
+
+            if (events.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="loading">Нет ивентов по выбранным фильтрам.</td></tr>';
+                return;
+            }
+
+            events.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="anarchy-badge">${item.serverFormatted}</span></td>
+                    <td><strong>${item.displayName}</strong></td>
+                    <td>
+                        <span class="rarity-badge" style="color: ${item.rarityColor}; border: 1px solid ${item.rarityColor}55;">
+                            ${item.rarityName}
+                        </span>
+                    </td>
+                    <td><span class="status-active">🟢 Идёт сейчас</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Вызов при первой загрузке страницы (автообновление раз в N сек полностью удалено)
         fetchEvents();
-        setInterval(fetchEvents, 15000);
     </script>
 </body>
 </html>
