@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HolyWorld Events</title>
+    <title>HolyWorld Live Events</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -79,7 +79,6 @@
             font-weight: 600;
         }
 
-        /* Панель управления */
         .controls-container {
             display: flex;
             gap: 14px;
@@ -97,7 +96,6 @@
             z-index: 100;
         }
 
-        /* Счетчик ивентов */
         .events-counter {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--accent-glow);
@@ -151,7 +149,7 @@
             transform: rotate(180deg);
         }
 
-        /* СТИЛИ КАСТОМНОГО ДРОПДАУНА */
+        /* Кастомный дропдаун */
         .custom-dropdown {
             position: relative;
             min-width: 220px;
@@ -250,7 +248,6 @@
             color: #000000;
         }
 
-        /* Контейнер таблицы */
         .table-container {
             width: 100%;
             max-width: 960px;
@@ -372,12 +369,11 @@
     <div class="bg-aurora"></div>
 
     <h1>HolyWorld Events</h1>
-    <div id="status" class="status-bar">Синхронизация с сервером...</div>
+    <div id="status" class="status-bar">Подключение к API...</div>
 
     <div class="controls-container">
-        <!-- Счетчик -->
         <div class="events-counter">
-            <span>Ивентов:</span>
+            <span>Активных:</span>
             <span id="counter-value" class="count-num">0</span>
         </div>
 
@@ -386,7 +382,6 @@
             Обновить
         </button>
         
-        <!-- Кастомный стилизованный выпадающий список "Ивент" -->
         <div class="custom-dropdown" id="dropdown-name">
             <div class="dropdown-selected" onclick="toggleDropdown('dropdown-name')">
                 <span class="selected-text">Все ивенты</span>
@@ -395,7 +390,6 @@
             <div class="dropdown-menu"></div>
         </div>
 
-        <!-- Кастомный стилизованный выпадающий список "Редкость" -->
         <div class="custom-dropdown" id="dropdown-rarity">
             <div class="dropdown-selected" onclick="toggleDropdown('dropdown-rarity')">
                 <span class="selected-text">Вся редкость</span>
@@ -417,7 +411,7 @@
             </thead>
             <tbody id="events-list">
                 <tr>
-                    <td colspan="4" class="loading">Загрузка данных...</td>
+                    <td colspan="4" class="loading">Загрузка активных событий...</td>
                 </tr>
             </tbody>
         </table>
@@ -487,7 +481,6 @@
             return serverKey;
         }
 
-        /* УПРАВЛЕНИЕ КАСТОМНЫМИ ДРОПДАУНАМИ */
         function toggleDropdown(id) {
             const el = document.getElementById(id);
             const isActive = el.classList.contains('active');
@@ -510,39 +503,42 @@
             const tbody = document.getElementById('events-list');
             const statusEl = document.getElementById('status');
 
-            tbody.innerHTML = '<tr><td colspan="4" class="loading">Получение актуальных данных...</td></tr>';
-
-            const proxies = [
-                url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-                url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-                url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
-            ];
+            tbody.innerHTML = '<tr><td colspan="4" class="loading">Обновление списка ивентов...</td></tr>';
 
             const targetUrl = 'https://api.holyworld.me/v1/events';
+            
+            // Запросы напрямую + через прокси для надежности
+            const fetchMethods = [
+                () => fetch(targetUrl),
+                () => fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`),
+                () => fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`)
+            ];
+
             let data = null;
 
-            for (let proxy of proxies) {
+            for (let method of fetchMethods) {
                 try {
-                    const res = await fetch(proxy(targetUrl));
+                    const res = await method();
                     if (res.ok) {
                         data = await res.json();
                         break;
                     }
                 } catch (e) {
-                    console.warn('Прокси не ответил...');
+                    console.warn('Сбой запроса, пробуем альтернативный способ...');
                 }
             }
 
             if (!data) {
-                statusEl.innerText = 'Ошибка соединения';
-                tbody.innerHTML = '<tr><td colspan="4" class="error">Не удалось загрузить данные. Проверьте подключение.</td></tr>';
+                statusEl.innerText = 'Ошибка загрузки данных';
+                tbody.innerHTML = '<tr><td colspan="4" class="error">Не удалось получить данные с сервера HolyWorld.</td></tr>';
                 document.getElementById('counter-value').innerText = '0';
                 return;
             }
 
-            statusEl.innerText = `Синхронизировано: ${new Date().toLocaleTimeString('ru-RU')}`;
+            statusEl.innerText = `Обновлено: ${new Date().toLocaleTimeString('ru-RU')}`;
             rawEventsList = [];
 
+            // Обрабатываем ТОЛЬКО активные в текущий момент ивенты
             Object.keys(data).forEach(serverKey => {
                 const eventList = data[serverKey];
                 if (Array.isArray(eventList)) {
@@ -565,6 +561,7 @@
                 }
             });
 
+            // Сортируем: сверху наиболее редкие
             rawEventsList.sort((a, b) => {
                 if (b.rarityPriority !== a.rarityPriority) {
                     return b.rarityPriority - a.rarityPriority;
@@ -576,7 +573,6 @@
             applyFilters();
         }
 
-        /* ГЕНЕРАЦИЯ СПИСКОВ СО СЧЕТЧИКАМИ ИВЕНТОВ И РЕДКОСТЕЙ */
         function updateDropdownMenus() {
             const nameCounts = {};
             const rarityCounts = {};
@@ -586,7 +582,6 @@
                 rarityCounts[item.rarityName] = (rarityCounts[item.rarityName] || 0) + 1;
             });
 
-            // Меню ивентов со счетчиками
             const nameMenu = document.querySelector('#dropdown-name .dropdown-menu');
             let nameHTML = `<div class="dropdown-item ${selectedNameVal === '' ? 'selected' : ''}" onclick="selectFilter('name', '')">
                 <span>Все ивенты</span>
@@ -602,7 +597,6 @@
             });
             nameMenu.innerHTML = nameHTML;
 
-            // Меню редкости со счетчиками
             const rarityMenu = document.querySelector('#dropdown-rarity .dropdown-menu');
             let rarityHTML = `<div class="dropdown-item ${selectedRarityVal === '' ? 'selected' : ''}" onclick="selectFilter('rarity', '')">
                 <span>Вся редкость</span>
@@ -672,7 +666,7 @@
             tbody.innerHTML = '';
 
             if (events.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="loading">Нет ивентов с выбранными параметрами.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="loading">Прямо сейчас нет активных ивентов с выбранными параметрами.</td></tr>';
                 return;
             }
 
@@ -696,6 +690,9 @@
                 tbody.appendChild(row);
             });
         }
+
+        // Автообновление каждые 30 секунд для получения актуальных данных
+        setInterval(fetchEvents, 30000);
 
         fetchEvents();
     </script>
