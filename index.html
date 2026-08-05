@@ -7,11 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Базовые цвета (по умолчанию) */
             --accent-color: #ffaa00;
-            --accent-glow: rgba(255, 170, 0, 0.25);
-            --bg-glow-1: rgba(255, 170, 0, 0.12);
-            --bg-glow-2: rgba(170, 0, 255, 0.08);
+            --accent-glow: rgba(255, 170, 0, 0.2);
+            --bg-glow: rgba(255, 170, 0, 0.08);
         }
 
         * {
@@ -21,16 +19,15 @@
             font-family: 'Montserrat', sans-serif;
         }
 
-        /* Кастомный скроллбар */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #06070c;
+            background: #090a10;
         }
         ::-webkit-scrollbar-thumb {
-            background: #1b1e33;
+            background: #1e2238;
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
@@ -38,7 +35,7 @@
         }
 
         body {
-            background: #06070c;
+            background: #090a10;
             color: #ffffff;
             padding: 40px 15px;
             display: flex;
@@ -47,10 +44,8 @@
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
-            transition: background 0.5s ease;
         }
 
-        /* Динамический живой фон с плавными переходами */
         .bg-aurora {
             position: fixed;
             top: 0;
@@ -59,35 +54,12 @@
             height: 100vh;
             z-index: -1;
             pointer-events: none;
-            overflow: hidden;
-        }
-
-        .aurora-blob-1 {
-            position: absolute;
-            top: -20%;
-            left: 30%;
-            width: 600px;
-            height: 600px;
-            background: var(--bg-glow-1);
-            filter: blur(140px);
-            border-radius: 50%;
-            transition: all 0.8s ease;
-        }
-
-        .aurora-blob-2 {
-            position: absolute;
-            bottom: -10%;
-            right: 15%;
-            width: 500px;
-            height: 500px;
-            background: var(--bg-glow-2);
-            filter: blur(150px);
-            border-radius: 50%;
-            transition: all 0.8s ease;
+            background: radial-gradient(circle at 50% 0%, var(--bg-glow) 0%, transparent 60%);
+            transition: background 0.5s ease;
         }
 
         h1 {
-            font-size: 2.4rem;
+            font-size: 2.2rem;
             font-weight: 900;
             margin-bottom: 6px;
             background: linear-gradient(135deg, #ffffff 40%, var(--accent-color) 100%);
@@ -95,9 +67,7 @@
             -webkit-text-fill-color: transparent;
             text-transform: uppercase;
             letter-spacing: 2px;
-            text-shadow: 0 0 35px var(--accent-glow);
             text-align: center;
-            transition: all 0.5s ease;
         }
 
         .status-bar {
@@ -106,7 +76,6 @@
             margin-bottom: 25px;
             text-align: center;
             font-weight: 600;
-            letter-spacing: 0.5px;
         }
 
         /* Панель управления */
@@ -117,30 +86,51 @@
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            background: rgba(13, 15, 26, 0.75);
-            padding: 14px 22px;
-            border-radius: 18px;
+            background: rgba(18, 20, 32, 0.75);
+            padding: 12px 20px;
+            border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(16px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-            transition: border-color 0.5s ease;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Счетчик ивентов */
+        .events-counter {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--accent-glow);
+            padding: 0 16px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #d1d5f0;
+            transition: all 0.3s ease;
+        }
+
+        .events-counter .count-num {
+            color: var(--accent-color);
+            font-weight: 800;
+            font-size: 15px;
         }
 
         .refresh-btn {
-            background: linear-gradient(135deg, var(--accent-color) 0%, rgba(200, 100, 0, 0.9) 100%);
+            background: linear-gradient(135deg, var(--accent-color) 0%, rgba(210, 110, 0, 0.9) 100%);
             color: #000;
             border: none;
-            padding: 0 24px;
+            padding: 0 22px;
             border-radius: 12px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             font-weight: 800;
             font-size: 13px;
             height: 44px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 20px var(--accent-glow);
+            gap: 8px;
+            box-shadow: 0 4px 15px var(--accent-glow);
             text-transform: uppercase;
             letter-spacing: 0.8px;
         }
@@ -152,22 +142,18 @@
 
         .refresh-btn:hover {
             transform: translateY(-2px);
-            filter: brightness(1.15);
+            filter: brightness(1.1);
         }
 
         .refresh-btn:hover svg {
             transform: rotate(180deg);
         }
 
-        .refresh-btn:active {
-            transform: translateY(0);
-        }
-
         .filter-select {
-            background-color: #0a0b12;
-            color: #e1e4f7;
-            border: 1px solid #1f233b;
-            padding: 0 40px 0 16px;
+            background-color: #0d0f18;
+            color: #d1d5f0;
+            border: 1px solid #232742;
+            padding: 0 38px 0 16px;
             border-radius: 12px;
             height: 44px;
             outline: none;
@@ -176,14 +162,14 @@
             font-weight: 700;
             transition: all 0.3s ease;
             appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg fill='%238c95c7' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-image: url("data:image/svg+xml;utf8,<svg fill='%237c85b1' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
             background-repeat: no-repeat;
-            background-position: right 12px center;
+            background-position: right 10px center;
         }
 
         .filter-select:hover, .filter-select:focus {
             border-color: var(--accent-color);
-            box-shadow: 0 0 15px var(--accent-glow);
+            box-shadow: 0 0 12px var(--accent-glow);
         }
 
         /* Контейнер таблицы */
@@ -191,12 +177,11 @@
             width: 100%;
             max-width: 960px;
             overflow: hidden;
-            background: rgba(10, 12, 22, 0.8);
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            background: rgba(14, 16, 27, 0.8);
+            border-radius: 18px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px);
-            transition: border-color 0.5s ease;
+            backdrop-filter: blur(16px);
         }
 
         table {
@@ -206,21 +191,21 @@
         }
 
         th, td {
-            padding: 18px 24px;
+            padding: 16px 22px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         th {
-            background-color: rgba(6, 7, 12, 0.95);
-            color: #4c537a;
+            background-color: rgba(9, 10, 16, 0.9);
+            color: #555c82;
             font-size: 11px;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 1.2px;
         }
 
         tbody tr {
-            transition: all 0.2s ease;
+            transition: background 0.2s ease;
         }
 
         tbody tr:last-child td {
@@ -228,21 +213,18 @@
         }
 
         tbody tr:hover {
-            background-color: rgba(255, 255, 255, 0.035);
+            background-color: rgba(255, 255, 255, 0.03);
         }
 
-        /* Бэйджи и Акценты */
         .anarchy-badge {
             color: var(--accent-color);
             font-weight: 800;
             background: rgba(255, 255, 255, 0.03);
-            padding: 6px 14px;
+            padding: 6px 12px;
             border-radius: 8px;
             border: 1px solid var(--accent-glow);
             display: inline-block;
             font-size: 13px;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
         }
 
         .rarity-badge {
@@ -252,14 +234,13 @@
             display: inline-block;
             font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
         }
 
         .event-name {
             font-size: 15px;
             font-weight: 700;
             color: #ffffff;
-            letter-spacing: 0.3px;
         }
 
         .status-active {
@@ -282,43 +263,44 @@
             height: 7px;
             background-color: #00ff88;
             border-radius: 50%;
-            box-shadow: 0 0 10px #00ff88;
+            box-shadow: 0 0 8px #00ff88;
         }
 
         .loading, .error {
             text-align: center;
-            padding: 50px;
-            color: #4c537a;
+            padding: 40px;
+            color: #555c82;
             font-weight: 700;
-            letter-spacing: 0.5px;
         }
 
         .error {
             color: #ff3366;
         }
 
-        /* Анимация при изменении строк */
         .fade-in {
-            animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            animation: fadeIn 0.3s ease forwards;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-    <div class="bg-aurora">
-        <div class="aurora-blob-1"></div>
-        <div class="aurora-blob-2"></div>
-    </div>
+    <div class="bg-aurora"></div>
 
     <h1>HolyWorld Events</h1>
-    <div id="status" class="status-bar">Синхронизация...</div>
+    <div id="status" class="status-bar">Синхронизация с сервером...</div>
 
     <div class="controls-container">
+        <!-- Счетчик ивентов -->
+        <div class="events-counter">
+            <span>Ивентов:</span>
+            <span id="counter-value" class="count-num">0</span>
+        </div>
+
         <button class="refresh-btn" onclick="fetchEvents()">
             <svg width="14" height="14" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
             Обновить
@@ -382,7 +364,6 @@
             'обычный': { name: 'Обычный', color: '#7c85b1', priority: 10 }
         };
 
-        // Специальная цветовая тема под конкретные типы ивентов
         const EVENT_THEMES = {
             'Таинственный корабль': '#00e5ff',
             'Золотая лихорадка': '#ffaa00',
@@ -446,7 +427,8 @@
 
             if (!data) {
                 statusEl.innerText = 'Ошибка соединения';
-                tbody.innerHTML = '<tr><td colspan="4" class="error">Не удалось загрузить ивенты. Нажмите «Обновить».</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="error">Не удалось загрузить данные. Проверьте подключение.</td></tr>';
+                document.getElementById('counter-value').innerText = '0';
                 return;
             }
 
@@ -515,7 +497,6 @@
             const selectedName = document.getElementById('filter-name').value;
             const selectedRarity = document.getElementById('filter-rarity').value;
 
-            // Динамическое сменяемое освещение фонов при выборе фильтров
             updateDynamicTheme(selectedName, selectedRarity);
 
             const filtered = rawEventsList.filter(item => {
@@ -524,27 +505,30 @@
                 return matchesName && matchesRarity;
             });
 
+            // Обновляем счетчик
+            const counterEl = document.getElementById('counter-value');
+            if (filtered.length === rawEventsList.length) {
+                counterEl.innerText = rawEventsList.length;
+            } else {
+                counterEl.innerText = `${filtered.length} / ${rawEventsList.length}`;
+            }
+
             renderTable(filtered);
         }
 
-        // Динамическая смена темы сайта от выбранного фильтра
         function updateDynamicTheme(selectedName, selectedRarity) {
-            let activeColor = '#ffaa00'; // По умолчанию
+            let activeColor = '#ffaa00';
 
-            // Сначала смотрим на выбранную редкость
             if (selectedRarity) {
                 const rarityObj = Object.values(RARITY_MAP).find(r => r.name === selectedRarity);
                 if (rarityObj) activeColor = rarityObj.color;
-            } 
-            // Если редкость не выбрана, проверяем название ивента
-            else if (selectedName && EVENT_THEMES[selectedName]) {
+            } else if (selectedName && EVENT_THEMES[selectedName]) {
                 activeColor = EVENT_THEMES[selectedName];
             }
 
-            // Передаем переменные в CSS
             document.documentElement.style.setProperty('--accent-color', activeColor);
-            document.documentElement.style.setProperty('--accent-glow', activeColor + '40');
-            document.documentElement.style.setProperty('--bg-glow-1', activeColor + '20');
+            document.documentElement.style.setProperty('--accent-glow', activeColor + '35');
+            document.documentElement.style.setProperty('--bg-glow', activeColor + '12');
         }
 
         function renderTable(events) {
@@ -563,7 +547,7 @@
                     <td><span class="anarchy-badge">${item.serverFormatted}</span></td>
                     <td><span class="event-name">${item.displayName}</span></td>
                     <td>
-                        <span class="rarity-badge" style="color: ${item.rarityColor}; background: ${item.rarityColor}15; border: 1px solid ${item.rarityColor}45; box-shadow: 0 0 14px ${item.rarityColor}25;">
+                        <span class="rarity-badge" style="color: ${item.rarityColor}; background: ${item.rarityColor}12; border: 1px solid ${item.rarityColor}40;">
                             ${item.rarityName}
                         </span>
                     </td>
